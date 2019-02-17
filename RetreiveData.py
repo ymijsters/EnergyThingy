@@ -6,6 +6,7 @@ import numpy
 import seaborn as sns
 
 mypath= './Excelfiles'
+#2605 files
 onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
 dataframes = []
 
@@ -23,10 +24,17 @@ def get_daily_energy_per_hour(dataframe):
 
 def get_total_energy_per_hour(dataframes):
     array_per_hour = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []]
-    daily_array = []
+    all_days_array = []
+    # Per dag van de week (maandag = 0) een array met een lengte van 24 waar alle energie waarden inzitten
+    map_day_of_the_week = {0:list(),1:list(),2:list(),3:list(),4:list(),5:list(),6:list()}
+    
     for dataframe in dataframes:
-        daily_array.append(get_daily_energy_per_hour(dataframe))
-    for day_array in daily_array:
+        # print(dataframe["Tijdstip"][13].weekday())
+        all_days_array.append(get_daily_energy_per_hour(dataframe))
+        weekday = dataframe["Tijdstip"][13].weekday()
+        map_day_of_the_week[weekday].append(get_daily_energy_per_hour(dataframe))
+        
+    for day_array in all_days_array:
         for hour in range(0, len(day_array)):
             array_per_hour[hour].append(day_array[hour])
     return array_per_hour
@@ -57,10 +65,12 @@ for file in onlyfiles:
     y = [df[df.columns[1]][item] + df[df.columns[2]][item] for item in range(0, len(df[df.columns[0]]))]
 
 total_energy_per_hour = get_total_energy_per_hour(dataframes)
+print(len(total_energy_per_hour[0]))
 period_array = get_mean_for_all_periods(total_energy_per_hour, 100)
-for hour_periods in period_array:
-    print(hour_periods)
-    print(numpy.argmax(hour_periods))
+
+# for hour_periods in period_array:
+    # print(hour_periods)
+    # print(numpy.argmax(hour_periods))
 
 #print(total_energy_per_hour[4][0:int(len(total_energy_per_hour[4])/2+1)])
 #plt.hist(total_energy_per_hour[4][0:int(len(total_energy_per_hour[4])/4)], bins=100)
