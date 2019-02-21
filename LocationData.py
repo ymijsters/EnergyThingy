@@ -3,7 +3,7 @@ from math import radians, cos, sin, asin, sqrt
 import urllib.request
 import json
 import sys
-
+import retrievedata
 global bingApiKey
 bingApiKey = "Ajh2QYJKvUUVGSFYO6OvyxQgpf-o10BEnNgG6PeoQNz8jDhnUzNaKmJk4PiI6zAi"
 
@@ -75,9 +75,54 @@ weatherstations = getWeatherStations("weatherstations.json")
 nameOfStation, distance = findClosestWeatherstation(coordinates,weatherstations)
 print("Closest station is ",nameOfStation, "Distance to location is: ", distance, "KM")
 weatherdata = getWeatherData("weatherdata.json")
+
 if len(sys.argv) <2:
 	print("No date given please give date in YYYYMMDD format")
 else:
 	dateOfWeather = int(sys.argv[1])
 	weather = getWeatherOnDateOnStation(weatherdata,dateOfWeather,int(nameOfStation))
-	print(weather)
+
+datastore = None
+with open("weatherdatepoints.json", 'r') as f:
+	datastore = json.load(f)
+
+totalmap = {}
+for date in datastore["date"]:
+	totalmap[int(date)] = getWeatherOnDateOnStation(weatherdata,date,int(nameOfStation))
+
+# print(totalmap)
+energy_data_map = retrievedata.getMap()
+
+
+
+# for key in totalmap:
+# 	print(key)
+
+banned_keys = ["energy","date","STN","YYYYMMDD"]
+for key in energy_data_map:
+	if key in totalmap:
+		if totalmap[key]:
+			for inner_key in totalmap[key]:
+				energy_data_map[key][inner_key] = totalmap[key][inner_key]
+
+f= open("total_data.csv","w+")
+for key in energy_data_map:
+	for inner_key in energy_data_map[key]:
+		if inner_key in banned_keys:
+			continue
+		f.write(str(inner_key) + ",")
+	f.write("energy")
+	f.write("\n")
+	break
+
+for key in energy_data_map:
+	if len(energy_data_map[key]) < 8:
+		continue
+	for inner_key in energy_data_map[key]:
+		if inner_key in banned_keys:
+			continue
+		f.write(str(energy_data_map[key][inner_key]) + ",")
+	f.write(str(energy_data_map[key]["energy"]))
+	f.write("\n")
+
+print("Done writing all the data to a file")

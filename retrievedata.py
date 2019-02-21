@@ -26,14 +26,9 @@ def get_total_energy_per_hour(dataframes):
     array_per_hour = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []]
     all_days_array = []
     # Per dag van de week (maandag = 0) een array met een lengte van 24 waar alle energie waarden inzitten
-    map_day_of_the_week = {0:list(),1:list(),2:list(),3:list(),4:list(),5:list(),6:list()}
     
     for dataframe in dataframes:
-        # print(dataframe["Tijdstip"][13].weekday())
         all_days_array.append(get_daily_energy_per_hour(dataframe))
-        weekday = dataframe["Tijdstip"][13].weekday()
-        map_day_of_the_week[weekday].append(get_daily_energy_per_hour(dataframe))
-        
     for day_array in all_days_array:
         for hour in range(0, len(day_array)):
             array_per_hour[hour].append(day_array[hour])
@@ -57,16 +52,46 @@ def get_mean_for_all_periods(data_per_hour, periods):
             period_averages[hour].append(numpy.nanmean(period))
     return period_averages
 
+def average_out(array):
+	total_value = 0
+	for value in array:
+		total_value = total_value + value
+	return total_value
 
-for file in onlyfiles:
-    df = pd.read_excel('./Excelfiles/' + file)
-    dataframes.append(df)
-    x = [item.time() for item in df[df.columns[0]]]
-    y = [df[df.columns[1]][item] + df[df.columns[2]][item] for item in range(0, len(df[df.columns[0]]))]
+def get_map_by_day_of_the_week(dataframes):
+	# map_day_of_the_week = {0:list(),1:list(),2:list(),3:list(),4:list(),5:list(),6:list()}
+	map_day_of_the_week = {}
+	for dataframe in dataframes:
+		total_map = {}
+		weekday = dataframe["Tijdstip"][13].weekday()
+		year = str(dataframe["Tijdstip"][13].year)
+		month =  str(dataframe["Tijdstip"][13].month)
+		day = str(dataframe["Tijdstip"][13].day)
+		if len(month) == 1:
+			month = "0" + month
+		if len(day) == 1:
+			day = "0" + day
+		date = year + month + day
+		total_map = {"energy":average_out(get_daily_energy_per_hour(dataframe)),"date": date, "weekday": weekday}
+		map_day_of_the_week[int(date)] = total_map
+	return map_day_of_the_week
 
-total_energy_per_hour = get_total_energy_per_hour(dataframes)
-print(len(total_energy_per_hour[0]))
-period_array = get_mean_for_all_periods(total_energy_per_hour, 100)
+
+
+def getMap():
+    for file in onlyfiles:
+        df = pd.read_excel('./Excelfiles/' + file)
+        dataframes.append(df)
+        x = [item.time() for item in df[df.columns[0]]]
+        y = [df[df.columns[1]][item] + df[df.columns[2]][item] for item in range(0, len(df[df.columns[0]]))]
+
+    total_energy_per_hour = get_total_energy_per_hour(dataframes)
+    total_map = get_map_by_day_of_the_week(dataframes)
+    return total_map
+	# print(total_map)
+
+
+# period_array = get_mean_for_all_periods(total_energy_per_hour, 100)
 
 # for hour_periods in period_array:
     # print(hour_periods)
